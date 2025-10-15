@@ -1,5 +1,7 @@
-# Add common files/folders to ignore
-node_modules/
-.env
-*.log
-.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
