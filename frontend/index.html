@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Quotes Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-card">
+            <h2 id="auth-title">Hot Quotes Management</h2>
+            <div id="login-error" class="error-message" style="display: none;"></div>
+
+            <!-- Login Section -->
+            <div id="login-section">
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" id="login-btn" class="login-btn">Login</button>
+                    <div class="auth-switch">
+                        Don't have an account? <a href="#" id="show-register">Create Account</a>
+                    </div>
+                </form>
+
+                <div class="demo-accounts">
+                    <h4>Demo Accounts:</h4>
+                    <div>Admin: admin / admin123</div>
+                    <div>Sales: sales_demo / sales123</div>
+                    <div>Analyst: analyst_demo / analyst123</div>
+                </div>
+            </div>
+
+            <!-- Registration Section -->
+            <div id="register-section" style="display: none;">
+                <form id="register-form" class="login-form">
+                    <div class="form-group">
+                        <label for="reg-email">Protolabs Email:</label>
+                        <input type="email" id="reg-email" name="email" required>
+                        <small class="form-help">Must be in format: first.last@protolabs.com</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-password">Password:</label>
+                        <input type="password" id="reg-password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-role">Account Type:</label>
+                        <select id="reg-role" name="role" required>
+                            <option value="">Choose your role</option>
+                            <option value="sales">Sales - Submit and track quotes</option>
+                            <option value="analyst">Analyst - Analyze and complete quotes</option>
+                        </select>
+                        <small class="form-help">Select the role that matches your job function</small>
+                    </div>
+                    <button type="submit" id="register-btn" class="login-btn">Create Account</button>
+                    <div class="auth-switch">
+                        Already have an account? <a href="#" id="show-login">Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" class="app-container">
+        <header>
+            <div class="header-top">
+                <h1>Hot Quotes Management System</h1>
+                <div class="user-info">
+                    <span id="current-user-name">-</span>
+                    <span id="current-user-role" class="role-badge">-</span>
+                    <button onclick="logout()" class="logout-btn">Logout</button>
+                </div>
+            </div>
+            <nav id="main-nav">
+                <!-- Navigation buttons will be dynamically generated -->
+            </nav>
+        </header>
+
+        <main>
+            <!-- Admin Dashboard -->
+            <section id="admin-dashboard" class="section">
+                <div class="dashboard-welcome">
+                    <h2>Admin Dashboard</h2>
+                    <p>Welcome! You have full system access and can manage users, quotes, and view all analytics.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Users</h3>
+                        <div class="stat-number" id="total-users">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Available Quotes</h3>
+                        <div class="stat-number" id="available-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Claimed Quotes</h3>
+                        <div class="stat-number" id="claimed-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed Quotes</h3>
+                        <div class="stat-number" id="completed-count">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sales Dashboard -->
+            <section id="sales-dashboard" class="section">
+                <div class="dashboard-welcome">
+                    <h2>Sales Dashboard</h2>
+                    <p>Submit new quotes and track the status of your submissions.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>My Submitted Quotes</h3>
+                        <div class="stat-number" id="sales-total-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Awaiting Analysis</h3>
+                        <div class="stat-number" id="sales-available-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Being Analyzed</h3>
+                        <div class="stat-number" id="sales-claimed-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed</h3>
+                        <div class="stat-number" id="sales-completed-count">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analyst Dashboard -->
+            <section id="analyst-dashboard" class="section">
+                <div class="dashboard-welcome">
+                    <h2>Analyst Dashboard</h2>
+                    <p>Claim quotes from the queue and manage your workload.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Available to Claim</h3>
+                        <div class="stat-number" id="analyst-available-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>My Current Claims</h3>
+                        <div class="stat-number" id="analyst-claims-count">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>My Completed</h3>
+                        <div class="stat-number" id="analyst-completed-count">-</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Available Quote Queue -->
+            <section id="queue" class="section">
+                <h2>Available Quote Queue</h2>
+                <div class="queue-controls">
+                    <button onclick="refreshQueue()" class="refresh-btn">Refresh Queue</button>
+                </div>
+                <div id="quotes-list">
+                    <!-- Quotes will be loaded here -->
+                </div>
+            </section>
+
+            <!-- My Claims -->
+            <section id="myclaims" class="section">
+                <h2>My Claimed Quotes</h2>
+                <div class="queue-controls">
+                    <button onclick="refreshMyClaims()" class="refresh-btn">Refresh My Claims</button>
+                </div>
+                <div id="my-claims-list">
+                    <!-- My claims will be loaded here -->
+                </div>
+            </section>
+
+            <!-- All Quotes -->
+            <section id="allquotes" class="section">
+                <h2>All Quotes</h2>
+                <div class="queue-controls">
+                    <button onclick="refreshAllQuotes()" class="refresh-btn">Refresh All Quotes</button>
+                    <label>Filter by status:</label>
+                    <select id="status-filter" onchange="refreshAllQuotes()">
+                        <option value="">All Statuses</option>
+                        <option value="available">Available</option>
+                        <option value="claimed">Claimed</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                </div>
+                <div id="all-quotes-list">
+                    <!-- All quotes will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Completed Quotes -->
+            <section id="completed" class="section">
+                <h2>Completed Quotes</h2>
+                <div class="queue-controls">
+                    <button onclick="refreshCompleted()" class="refresh-btn">Refresh Completed</button>
+                </div>
+                <div id="completed-list">
+                    <!-- Completed quotes will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Submit Quote -->
+            <section id="submit" class="section">
+                <h2>Submit New Quote</h2>
+                <form id="quote-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="quote-number">Quote Number: *</label>
+                        <input type="text" id="quote-number" name="quote_number" required 
+                               placeholder="e.g., HQ-2024-001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason-for-hot">Reason for Hot: *</label>
+                        <select id="reason-for-hot" name="reason_for_hot" required onchange="toggleOtherReason()">
+                            <option value="">Select reason</option>
+                            <option value="cutoff/order asap">Cutoff/Order ASAP</option>
+                            <option value="design review">Design Review</option>
+                            <option value="full dfm">Full DFM</option>
+                            <option value="plicr">PLICR</option>
+                            <option value="cds">CDS</option>
+                            <option value="investigation">Investigation</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="other-reason-group" style="display: none;">
+                        <label for="reason-other-text">Please specify other reason: *</label>
+                        <input type="text" id="reason-other-text" name="reason_other_text" 
+                               placeholder="Specify other reason">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional-info">Additional Information: *</label>
+                        <textarea id="additional-info" name="additional_info" required 
+                                  placeholder="Provide detailed information about the quote requirements"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="special-process">Special Process: *</label>
+                        <select id="special-process" name="special_process" required>
+                            <option value="">Select process</option>
+                            <option value="standard">Standard</option>
+                            <option value="lsr">LSR</option>
+                            <option value="high temp">High Temp</option>
+                            <option value="mold mod">Mold Mod</option>
+                            <option value="insert molding">Insert Molding</option>
+                            <option value="over molding">Over Molding</option>
+                            <option value="secondary ops">Secondary Ops</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject-line">Subject Line:</label>
+                        <input type="text" id="subject-line" name="subject_line" 
+                               placeholder="Email subject line (optional)">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="additional-cc-emails">Additional CC Emails:</label>
+                        <div id="cc-emails-container">
+                            <div class="cc-email-input">
+                                <input type="email" class="cc-email" placeholder="Enter email address">
+                                <button type="button" onclick="removeCCEmail(this)" class="remove-cc-btn">Remove</button>
+                            </div>
+                        </div>
+                        <button type="button" onclick="addCCEmail()" class="add-cc-btn">Add Another Email</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="file-upload">File Upload:</label>
+                        <input type="file" id="file-upload" name="file" 
+                               accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.zip,.rar">
+                        <small class="form-help">Supported: PDF, DOC, DOCX, TXT, JPG, PNG, ZIP, RAR (Max 50MB)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="priority">Priority:</label>
+                        <select id="priority" name="priority">
+                            <option value="normal">Normal</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+
+                    <button type="submit">Submit Quote</button>
+                </form>
+            </section>
+
+            <!-- User Management -->
+            <section id="users" class="section">
+                <div class="user-management">
+                    <h2>User Management</h2>
+                    <button onclick="showAddUserModal()" class="add-user-btn">Add New User</button>
+                    <div id="users-list-container">
+                        <div class="loading">Loading users...</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Completion Modal -->
+    <div id="completion-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Complete Quote</h3>
+            <textarea id="completion-notes" placeholder="Enter completion notes (optional)"></textarea>
+            <div class="modal-actions">
+                <button onclick="submitCompletion()" class="complete-btn">Complete Quote</button>
+                <button onclick="closeModal()" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="add-user-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Add New User</h3>
+            <form id="add-user-form">
+                <div class="form-group">
+                    <label for="new-username">Username:</label>
+                    <input type="text" id="new-username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-email">Email:</label>
+                    <input type="email" id="new-email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-full-name">Full Name:</label>
+                    <input type="text" id="new-full-name" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-password">Password:</label>
+                    <input type="password" id="new-password" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new-role">Role:</label>
+                    <select id="new-role" name="role" required>
+                        <option value="">Select Role</option>
+                        <option value="admin">Admin</option>
+                        <option value="sales">Sales</option>
+                        <option value="analyst">Analyst</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit">Add User</button>
+                    <button type="button" onclick="closeAddUserModal()" class="cancel-btn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
