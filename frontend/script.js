@@ -3,6 +3,73 @@ let currentUser = null;
 let authToken = null;
 let currentQuoteToComplete = null;
 
+// Check network access on startup
+async function checkNetworkAccess() {
+    try {
+        const response = await fetch(`${API_BASE}/network-status`);
+        const status = await response.json();
+        
+        if (response.ok) {
+            console.log('Network status:', status);
+            return true;
+        } else {
+            throw new Error('Network access check failed');
+        }
+    } catch (error) {
+        console.error('Network access check error:', error);
+        showNetworkErrorMessage();
+        return false;
+    }
+}
+
+function showNetworkErrorMessage() {
+    const errorHTML = `
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        ">
+            <div style="
+                background: white;
+                padding: 2rem;
+                border-radius: 12px;
+                text-align: center;
+                max-width: 500px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            ">
+                <div style="font-size: 3rem; color: #e74c3c; margin-bottom: 1rem;">🚫</div>
+                <h2 style="color: #2c3e50; margin-bottom: 1rem;">Network Access Required</h2>
+                <p style="line-height: 1.6; margin-bottom: 1rem;">
+                    This application requires access to the Protolabs network or VPN connection.
+                </p>
+                <p style="color: #666; font-size: 0.9rem; font-style: italic;">
+                    Please ensure you are connected to the Protolabs network and refresh this page.
+                </p>
+                <button onclick="window.location.reload()" style="
+                    background: #3498db;
+                    color: white;
+                    border: none;
+                    padding: 0.8rem 1.5rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    margin-top: 1rem;
+                    font-size: 1rem;
+                ">
+                    Retry Connection
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('afterbegin', errorHTML);
+}
+
 // Authentication functions
 function getAuthHeaders() {
     return authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
@@ -26,12 +93,106 @@ async function login(username, password) {
             return true;
         } else {
             const error = await response.json();
+            
+            // Handle network access denied specifically
+            if (error.error_code === 'NETWORK_ACCESS_DENIED') {
+                showNetworkAccessDeniedDialog(error);
+                return false;
+            }
+            
             throw new Error(error.detail);
         }
     } catch (error) {
         console.error('Login error:', error);
+        
+        // Check if it's a network access error
+        if (error.message.includes('Network access denied') || error.message.includes('NETWORK_ACCESS_DENIED')) {
+            showNetworkAccessDeniedDialog();
+            return false;
+        }
+        
         throw error;
     }
+}
+
+function showNetworkAccessDeniedDialog(errorData = null) {
+    const clientIP = errorData?.client_ip || 'Unknown';
+    
+    const dialogHTML = `
+        <div id="network-access-denied" style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        ">
+            <div style="
+                background: white;
+                padding: 2rem;
+                border-radius: 12px;
+                text-align: center;
+                max-width: 500px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            ">
+                <div style="font-size: 3rem; color: #e74c3c; margin-bottom: 1rem;">🚫</div>
+                <h2 style="color: #2c3e50; margin-bottom: 1rem;">Network Access Denied</h2>
+                <p style="line-height: 1.6; margin-bottom: 1rem;">
+                    This application is only accessible from the Protolabs corporate network or VPN connection.
+                </p>
+                <div style="
+                    background: #f8f9fa;
+                    padding: 1rem;
+                    border-radius: 6px;
+                    margin: 1rem 0;
+                    font-family: monospace;
+                    font-size: 0.9rem;
+                ">
+                    Your IP: ${clientIP}<br>
+                    Time: ${new Date().toLocaleString()}
+                </div>
+                <p style="color: #666; font-size: 0.9rem; font-style: italic; margin-bottom: 1.5rem;">
+                    Please ensure you are connected to the Protolabs network or VPN, then try again.
+                    If the problem persists, contact IT support.
+                </p>
+                <div>
+                    <button onclick="window.location.reload()" style="
+                        background: #3498db;
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        margin-right: 1rem;
+                        font-size: 1rem;
+                    ">
+                        Retry Connection
+                    </button>
+                    <button onclick="document.getElementById('network-access-denied').remove()" style="
+                        background: #95a5a6;
+                        color: white;
+                        border: none;
+                        padding: 0.8rem 1.5rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 1rem;
+                    ">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove any existing dialog
+    const existing = document.getElementById('network-access-denied');
+    if (existing) existing.remove();
+    
+    document.body.insertAdjacentHTML('afterbegin', dialogHTML);
 }
 
 async function register(email, password, role) {
@@ -50,10 +211,24 @@ async function register(email, password, role) {
             return true;
         } else {
             const error = await response.json();
+            
+            // Handle network access denied specifically
+            if (error.error_code === 'NETWORK_ACCESS_DENIED') {
+                showNetworkAccessDeniedDialog(error);
+                return false;
+            }
+            
             throw new Error(error.detail);
         }
     } catch (error) {
         console.error('Registration error:', error);
+        
+        // Check if it's a network access error
+        if (error.message.includes('Network access denied') || error.message.includes('NETWORK_ACCESS_DENIED')) {
+            showNetworkAccessDeniedDialog();
+            return false;
+        }
+        
         throw error;
     }
 }
@@ -212,12 +387,45 @@ function showDefaultSectionForRole() {
     }
 }
 
+// Enhanced error handling for API calls
+async function makeAPICall(url, options = {}) {
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                ...options.headers,
+                ...getAuthHeaders()
+            }
+        });
+
+        if (response.status === 403) {
+            const error = await response.json();
+            if (error.error_code === 'NETWORK_ACCESS_DENIED') {
+                showNetworkAccessDeniedDialog(error);
+                throw new Error('Network access denied');
+            }
+        }
+
+        return response;
+    } catch (error) {
+        if (error.message === 'Network access denied') {
+            throw error;
+        }
+        
+        // Handle network connectivity issues
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            console.error('Network connectivity issue:', error);
+            alert('Network connectivity issue. Please check your connection to the Protolabs network.');
+        }
+        
+        throw error;
+    }
+}
+
 // Dashboard data loading
 async function loadDashboardData() {
     try {
-        const response = await fetch(`${API_BASE}/analytics/summary`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/analytics/summary`);
         const data = await response.json();
         
         // Update common stats
@@ -244,29 +452,29 @@ async function loadDashboardData() {
             loadUsersCount();
         }
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading dashboard data:', error);
+        }
     }
 }
 
 async function loadUsersCount() {
     try {
-        const response = await fetch(`${API_BASE}/users/`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/users/`);
         const users = await response.json();
         const element = document.getElementById('total-users');
         if (element) element.textContent = users.length;
     } catch (error) {
-        console.error('Error loading users count:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading users count:', error);
+        }
     }
 }
 
 // Quote management functions
 async function loadQueue() {
     try {
-        const response = await fetch(`${API_BASE}/quotes/available`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/quotes/available`);
         const quotes = await response.json();
         
         const container = document.getElementById('quotes-list');
@@ -282,7 +490,9 @@ async function loadQueue() {
             container.appendChild(element);
         });
     } catch (error) {
-        console.error('Error loading queue:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading queue:', error);
+        }
     }
 }
 
@@ -290,9 +500,7 @@ async function loadMyClaims() {
     if (!currentUser) return;
     
     try {
-        const response = await fetch(`${API_BASE}/quotes/claimed-by/${currentUser.username}`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/quotes/claimed-by/${currentUser.username}`);
         const quotes = await response.json();
         
         const container = document.getElementById('my-claims-list');
@@ -308,7 +516,9 @@ async function loadMyClaims() {
             container.appendChild(element);
         });
     } catch (error) {
-        console.error('Error loading my claims:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading my claims:', error);
+        }
     }
 }
 
@@ -318,9 +528,7 @@ async function loadAllQuotes() {
         const status = statusFilter ? statusFilter.value : '';
         
         const url = status ? `${API_BASE}/quotes/?status=${status}` : `${API_BASE}/quotes/`;
-        const response = await fetch(url, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(url);
         const quotes = await response.json();
         
         const container = document.getElementById('all-quotes-list');
@@ -337,15 +545,15 @@ async function loadAllQuotes() {
             container.appendChild(element);
         });
     } catch (error) {
-        console.error('Error loading all quotes:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading all quotes:', error);
+        }
     }
 }
 
 async function loadCompleted() {
     try {
-        const response = await fetch(`${API_BASE}/quotes/completed`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/quotes/completed`);
         const quotes = await response.json();
         
         const container = document.getElementById('completed-list');
@@ -361,7 +569,9 @@ async function loadCompleted() {
             container.appendChild(element);
         });
     } catch (error) {
-        console.error('Error loading completed quotes:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading completed quotes:', error);
+        }
     }
 }
 
@@ -455,9 +665,8 @@ function createQuoteElement(quote, context) {
 // Quote actions
 async function claimQuote(quoteId) {
     try {
-        const response = await fetch(`${API_BASE}/quotes/${quoteId}/claim`, {
-            method: 'POST',
-            headers: getAuthHeaders()
+        const response = await makeAPICall(`${API_BASE}/quotes/${quoteId}/claim`, {
+            method: 'POST'
         });
         
         if (response.ok) {
@@ -469,8 +678,10 @@ async function claimQuote(quoteId) {
             alert(`Error: ${error.detail}`);
         }
     } catch (error) {
-        console.error('Error claiming quote:', error);
-        alert('Error claiming quote');
+        if (error.message !== 'Network access denied') {
+            console.error('Error claiming quote:', error);
+            alert('Error claiming quote');
+        }
     }
 }
 
@@ -480,9 +691,8 @@ async function unclaimQuote(quoteId) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/quotes/${quoteId}/unclaim`, {
-            method: 'POST',
-            headers: getAuthHeaders()
+        const response = await makeAPICall(`${API_BASE}/quotes/${quoteId}/unclaim`, {
+            method: 'POST'
         });
         
         if (response.ok) {
@@ -494,8 +704,10 @@ async function unclaimQuote(quoteId) {
             alert(`Error: ${error.detail}`);
         }
     } catch (error) {
-        console.error('Error unclaiming quote:', error);
-        alert('Error unclaiming quote');
+        if (error.message !== 'Network access denied') {
+            console.error('Error unclaiming quote:', error);
+            alert('Error unclaiming quote');
+        }
     }
 }
 
@@ -516,9 +728,8 @@ async function submitCompletion() {
     const notes = document.getElementById('completion-notes').value.trim();
     
     try {
-        const response = await fetch(`${API_BASE}/quotes/${currentQuoteToComplete}/complete?completion_notes=${encodeURIComponent(notes)}`, {
-            method: 'POST',
-            headers: getAuthHeaders()
+        const response = await makeAPICall(`${API_BASE}/quotes/${currentQuoteToComplete}/complete?completion_notes=${encodeURIComponent(notes)}`, {
+            method: 'POST'
         });
         
         if (response.ok) {
@@ -531,8 +742,10 @@ async function submitCompletion() {
             alert(`Error: ${error.detail}`);
         }
     } catch (error) {
-        console.error('Error completing quote:', error);
-        alert('Error completing quote');
+        if (error.message !== 'Network access denied') {
+            console.error('Error completing quote:', error);
+            alert('Error completing quote');
+        }
     }
 }
 
@@ -586,9 +799,7 @@ async function loadUsers() {
     if (currentUser.role !== 'admin') return;
     
     try {
-        const response = await fetch(`${API_BASE}/users/`, {
-            headers: getAuthHeaders()
-        });
+        const response = await makeAPICall(`${API_BASE}/users/`);
         const users = await response.json();
         
         const container = document.getElementById('users-list-container');
@@ -649,7 +860,9 @@ async function loadUsers() {
         container.innerHTML = '';
         container.appendChild(table);
     } catch (error) {
-        console.error('Error loading users:', error);
+        if (error.message !== 'Network access denied') {
+            console.error('Error loading users:', error);
+        }
     }
 }
 
@@ -660,11 +873,10 @@ async function updateUserRole(userId, newRole) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/users/${userId}/role`, {
+        const response = await makeAPICall(`${API_BASE}/users/${userId}/role`, {
             method: 'PUT',
             headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({ role: newRole })
         });
@@ -678,8 +890,10 @@ async function updateUserRole(userId, newRole) {
             loadUsers(); // Reload to reset the dropdown
         }
     } catch (error) {
-        console.error('Error updating user role:', error);
-        alert('Error updating user role');
+        if (error.message !== 'Network access denied') {
+            console.error('Error updating user role:', error);
+            alert('Error updating user role');
+        }
         loadUsers(); // Reload to reset the dropdown
     }
 }
@@ -695,9 +909,8 @@ async function deleteUser(userId, username) {
     }
     
     try {
-        const response = await fetch(`${API_BASE}/users/${userId}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
+        const response = await makeAPICall(`${API_BASE}/users/${userId}`, {
+            method: 'DELETE'
         });
         
         if (response.ok) {
@@ -709,8 +922,10 @@ async function deleteUser(userId, username) {
             alert(`Error: ${error.detail}`);
         }
     } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Error deleting user');
+        if (error.message !== 'Network access denied') {
+            console.error('Error deleting user:', error);
+            alert('Error deleting user');
+        }
     }
 }
 
@@ -730,7 +945,13 @@ function refreshAllQuotes() { loadAllQuotes(); }
 function refreshCompleted() { loadCompleted(); }
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check network access first
+    const networkAccessible = await checkNetworkAccess();
+    if (!networkAccessible) {
+        return; // Stop initialization if network access is denied
+    }
+    
     // Check for existing login
     const savedToken = localStorage.getItem('authToken');
     const savedUser = localStorage.getItem('currentUser');
@@ -772,8 +993,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await login(username, password);
         } catch (error) {
-            errorDiv.textContent = error.message;
-            errorDiv.style.display = 'block';
+            // Don't show error message if it's network access denied (handled separately)
+            if (!error.message.includes('Network access denied')) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
         } finally {
             loginBtn.textContent = 'Login';
             loginBtn.disabled = false;
@@ -806,8 +1030,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await register(email, password, role);
         } catch (error) {
-            errorDiv.textContent = error.message;
-            errorDiv.style.display = 'block';
+            // Don't show error message if it's network access denied (handled separately)
+            if (!error.message.includes('Network access denied')) {
+                errorDiv.textContent = error.message;
+                errorDiv.style.display = 'block';
+            }
         } finally {
             registerBtn.textContent = 'Create Account';
             registerBtn.disabled = false;
@@ -825,9 +1052,8 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('additional_cc_emails', JSON.stringify(ccEmails));
         
         try {
-            const response = await fetch(`${API_BASE}/quotes/`, {
+            const response = await makeAPICall(`${API_BASE}/quotes/`, {
                 method: 'POST',
-                headers: getAuthHeaders(),
                 body: formData
             });
             
@@ -850,8 +1076,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Error: ${error.detail}`);
             }
         } catch (error) {
-            console.error('Error submitting quote:', error);
-            alert('Error submitting quote');
+            if (error.message !== 'Network access denied') {
+                console.error('Error submitting quote:', error);
+                alert('Error submitting quote');
+            }
         }
     });
     
@@ -869,11 +1097,10 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         try {
-            const response = await fetch(`${API_BASE}/auth/register`, {
+            const response = await makeAPICall(`${API_BASE}/auth/register`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    ...getAuthHeaders()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(userData)
             });
@@ -887,8 +1114,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Error: ${error.detail}`);
             }
         } catch (error) {
-            console.error('Error creating user:', error);
-            alert('Error creating user');
+            if (error.message !== 'Network access denied') {
+                console.error('Error creating user:', error);
+                alert('Error creating user');
+            }
         }
     });
 });
